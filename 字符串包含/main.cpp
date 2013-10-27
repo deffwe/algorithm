@@ -17,7 +17,7 @@ int main() {
         s2 = count_sort(s2);
 		map<char, string::size_type> kmpv;
 		for(string::size_type i = 0; i != s2.size(); ++i) {
-			string cs = s2.substr(0, i);
+			string cs = s2.substr(0, i + 1);
 			kmpv.insert(make_pair(s2[i], kmp(cs)));
 		}	
 		string::size_type i = 0, j = 0, k = 0;
@@ -45,4 +45,6 @@ int main() {
 		if(contain) cout << "包含" << endl;
 		else cout << "不包含" << endl;
     }
+
+    return 0;
 }
