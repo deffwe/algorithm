@@ -5,9 +5,9 @@
 	> Created Time: 2013年10月25日 星期五 12:55:21
  ************************************************************************/
 using namespace std;
-string count_sort(string);
+void count_sort(string);
 
-string count_sort(string s) {
+void count_sort(string s, string &rs) {
     map<char, int> mc;
     for(auto c:s) {
         auto insert_result = mc.insert(make_pair(c, 1));
@@ -25,12 +25,15 @@ string count_sort(string s) {
         ++pre;
     }
     //for(auto it=mc.begin();it!=mc.end();++it) cout << it->first << it->second << endl;
-    string rs(s);
-    string::size_type it = s.size();
-    for(it-=1; ; --it) {
+    for(auto it = s.rbegin(); it != s.rend(); ++it) {
+        rs[mc.at(*it) - 1] = *it;
+        --(mc.at(*it));
+    }
+    /**
+    for(; ; --it) {
         rs[mc.at(s[it])] = s[it];
-        --mc.at(s[it]);
+        --(mc.at(s[it]));
 		if(it == 0) break;
     }
-    return rs;
+    */
 }
