@@ -199,14 +199,124 @@ public:
 
 	void push_back (const value_type& val) {
 		if(behind_last == behind_entire) {
-			allocator(n * log2(n));
+			allocator(n * 2);
 		} 
 		*behind_last = val;
 		++behind_last;
 	}
 	void push_back (value_type&& val) {
-
+		if(behind_last == behind_entire) {
+			allocator(n * 2);
+		} 
+		*behind_last = val;
+		++behind_last;
+		val = nullptr;
 	}
+
+	void pop_back() {
+		--behind_last;
+		mem_allocate.destroy(behind_last);
+	}
+
+	iterator insert (const_iterator position, const value_type& val) {
+		T val_copy = val;
+		return insert(position, 1, val_copy);
+	}
+
+	iterator insert (const_iterator position, size_type n, const value_type& val) {
+		if(n != 0) {
+			T val_copy = val;
+			if ((size_type)(behind_entire - behind_last) >= n) {
+				const size_type elems_after = finish - position;
+				iterator old_finish = finish;
+				if(elems_after > n) {
+					uninitialized_copy(behind_last - n, behind_last, behind_last);
+					behind_last += n;
+					copy_backward(position, position + n, old_finish);
+					uninitialized_fill_n(position, n, val_copy);
+				} else {
+					uninitialized_fill_n(behind_last, n - elems_after, val_copy);
+					finish += n - elems_after;
+					uninitialized_copy(position, old_finish, behind_last);
+					behind_last += elems_after;
+					uninitialized_fill(position, old_finish, val_copy);
+				}
+				return position;
+			} else {
+				allocator(n + max(n, size()));
+				insert(position, n, val_copy);
+			}
+		}
+		
+	}
+
+	template <class InputIterator>
+	iterator insert (const_iterator position, InputIterator first, InputIterator last) {
+		auto tmp = position;
+		for(auto ite = first; ite != last; ++ite) {
+			insert(position++, 1, *ite);
+		}
+		return tmp;
+	}
+		
+	iterator insert (const_iterator position, value_type&& val) {
+		T val_copy = val;
+		destroy(val);
+		return insert(position, 1, val_copy);
+	}
+		
+	iterator insert (const_iterator position, initializer_list<value_type> il) {
+		auto tmp = position;
+		for(auto ite = il.begin(); ite != il.end(); ++il) {
+			insert(position++, 1, *ite);
+		}
+		return tmp;
+	}
+
+	iterator erase (const_iterator position) {
+		if(position +1 != end()) {
+			copy(position + 1, behind_last, position);
+		}
+		--behind_last;
+		destroy(behind_last + 1);
+		return position;
+	}
+	iterator erase (const_iterator first, const_iterator last) {
+		auto tmp = behind_last - last;
+		copy(last, behind_last, first);
+		behind_last = first + tmp;
+		auto tmp_last = behind_last;
+		while(tmp_last != nullptr) {
+			destroy(tmp_last);
+			++tmp_last;
+		}
+	}
+
+	void swap (vector& x) {
+		 std::swap(first, x.first);
+     	 std::swap(behind_last, x.behind_last);
+     	 std::swap(behind_entire, x.behind_entire);
+	}
+
+	void clear() { 
+		erase(begin(), end()); 
+	}
+
+	template <class... Args>
+	iterator emplace (const_iterator position, Args&&... args) {
+		vector<value_type> v(args);
+		insert(position, *(v.begin()));
+	}
+
+	template <class... Args>
+    void emplace_back (Args&&... args) {
+    	vector<value_type> v(args);
+    	push_back(*(v.begin()));
+    }
+
+    allocator_type get_allocator() const noexcept {
+    	return mem_allocate;
+    }
 private:
 	iterator first;               // 表示目前使用空间的头
 	iterator behind_last;              // 表示目前使用空间的尾后
@@ -227,7 +337,7 @@ private:
 	void free() {
 		if(first) {
 			for(auto p = behind_last; p != first;)
-				mem_allocate.destory(--p);
+				mem_allocate.destroy(--p);
 			mem_allocate.deallocate(first, behind_entire - first);
 		}
 	}
