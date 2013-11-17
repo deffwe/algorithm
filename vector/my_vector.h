@@ -310,7 +310,7 @@ public:
 
 	template <class... Args>
     void emplace_back (Args&&... args) {
-    	vector<value_type> v(args);
+    	vector<value_type> v(std::forward<Args>(args)...);
     	push_back(*(v.begin()));
     }
 
